@@ -7,16 +7,19 @@ import chalkAnimation from "chalk-animation";
 
 var user=[{
     accountNumber:'PK00010001',
+    userName:'Sam',
     password:'123456',
     amount:20000
 },
 {
     accountNumber:'PK00010002',
+    userName:'Alex',
     password:'987654',
     amount:30000
 },
 {
     accountNumber:'PK00010003',
+    userName:'Laura',
     password:'laura123',
     amount:60000
 }]
@@ -26,7 +29,7 @@ var userFinder:number=0;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
-function stop(){
+function animationOff(){
     return new Promise((resolve)=>{
         setTimeout(resolve,2500);
     })
@@ -36,10 +39,17 @@ function stop(){
 
 async function animation(){
     let title=chalkAnimation.rainbow("Welcome to the Bank ATM");
-    await stop();
+    await animationOff();
     let anotherTitle=chalkAnimation.neon('Lets get you started!');
-    await stop();
+    await animationOff();
     anotherTitle.stop();
+}
+////////////////////////////////////////////////////////////////////////////////////////
+
+async function welcomeUser(para:number){
+    let title=chalkAnimation.karaoke(`Welcome ${user[para].userName}`)
+    await animationOff();
+    title.stop();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -70,13 +80,20 @@ async function signIn(){
 
 var passwordFinder= user[userFinder].password==userPassword.password;
 if(passwordFinder==false){
-    console.log(`Wrong password. You can try it ${warning} times`);
     warning--;
     if(warning==0){
         console.log('You have complete your warning limit. Call 111-222-333');
     }
+    else{
+        console.log(`Wrong password. You can try it ${warning} times`);
+    }
 }
-}while(passwordFinder==false && warning >=0)
+}while(passwordFinder==false && warning >0);
+
+if(passwordFinder===true){
+    await welcomeUser(userFinder);
+    Menu();
+}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +124,7 @@ async function cashWithDrawl(para:number){
     else if(amountToWithDraw.amountOut<0){
         console.log('Incorrect Input. Please correct amount.')
     }
-    }while(amountToWithDraw.amountOut>balance || amountToWithDraw.amount<0);
+    }while(amountToWithDraw.amountOut>balance || amountToWithDraw.amountOut<0);
 
     balance=balance-amountToWithDraw.amountOut;
     console.log('Your new balance: ',balance);
@@ -137,18 +154,37 @@ async function transaction(para:number){
     {
         var amountSend=await inquirer.prompt([{
         name:'amountsend',
-        type:'input',
+        type:'number',
         message:'Enter the amount to send: '
      }]);
      if(amountSend.amountsend>balance){
         console.log('Amount is greater than your balance. Please enter correct amount');
      }
     }while(amountSend.amountsend>balance);
-    
+    console.log(typeof amountSend.amountsend)
+
     balance=balance-amountSend.amountsend;
     console.log(`Amount ${amountSend.amountsend} is send to account number ${sendUser.senduser}.`)
     console.log(`Your remaning balance is: ${balance}`)
 
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+async function cashDeposit(para:number){
+    let balance=user[para].amount;
+    console.log(`Your current balance is: ${balance}`)
+    do{
+        var cashIn=await inquirer.prompt([{
+            name:'cashdeposit',
+            type:'number',
+            message:'Enter the amount to deposit: '
+         }]);
+        if(cashIn.cashdeposit<0){
+            console.log('Incorrect input. Please enter amount!')
+        }      
+    }while(cashIn.cashdeposit<0)
+    balance=balance+cashIn.cashdeposit;
+    console.log(`Your new balance is: ${balance}`)  
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -158,7 +194,7 @@ async function Menu() {
         name:'mainMenu',
         type:'list',
         message:'Please select an operation!',
-        choices:['Balance Inquiry','Cash Withdrawl','Transaction']
+        choices:['Balance Inquiry','Cash Withdrawl','Cash Deposit','Transaction']
     }]);
     switch(main.mainMenu){
         case 'Balance Inquiry':
@@ -170,13 +206,14 @@ async function Menu() {
         case 'Transaction':
             transaction(userFinder);
             break;
+        case 'Cash Deposit':
+            cashDeposit(userFinder);
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 async function atmProcess(){
     await signIn();
-    await Menu();
 }
-
+await animation();
 atmProcess();
